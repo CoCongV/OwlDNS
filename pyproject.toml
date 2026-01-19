@@ -19,6 +19,9 @@ pytest-asyncio = "^0.23.0"
 pytest-cov = "^4.1.0"
 watchdog = "^4.0.0"
 
+[tool.coverage.run]
+omit = ["src/owldns/cli.py"]
+
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
