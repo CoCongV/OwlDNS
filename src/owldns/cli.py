@@ -1,6 +1,7 @@
 import asyncio
 import argparse
 import sys
+import uvloop
 from .server import OwlDNSServer
 
 
@@ -109,6 +110,8 @@ def main():
     """
     Entry point for the OwlDNS command-line interface.
     """
+    uvloop.install()
+
     parser = argparse.ArgumentParser(
         description="OwlDNS - A lightweight async DNS server")
 
