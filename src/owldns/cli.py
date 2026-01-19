@@ -51,7 +51,7 @@ def run_reloader():
             if self.process:
                 self.process.terminate()
                 self.process.wait()
-            print("Change detected, restarting OwlDNS...")
+            print("Change detected, restarting OwlDNS...", flush=True)
             self.process = subprocess.Popen(self.cmd)
 
         def on_any_event(self, event):
@@ -60,8 +60,14 @@ def run_reloader():
             self.restart()
 
     # Construct the command to restart (stripping --reload)
-    cmd = [sys.executable, "-m", "owldns.cli"] + \
-        [arg for arg in sys.argv[1:] if arg != "--reload"]
+    # We use "owldns" if available in PATH, otherwise fallback to python -m
+    cmd = ["owldns"] + [arg for arg in sys.argv[1:] if arg != "--reload"]
+
+    # Check if 'owldns' is in PATH, if not, use python -m
+    import shutil
+    if not shutil.which("owldns"):
+        cmd = [sys.executable, "-m", "owldns.cli"] + \
+            [arg for arg in sys.argv[1:] if arg != "--reload"]
 
     handler = ReloadHandler(cmd)
     observer = Observer()
@@ -109,3 +115,7 @@ def main():
         run_reloader()
     else:
         start_server(args)
+
+
+if __name__ == "__main__":
+    main()

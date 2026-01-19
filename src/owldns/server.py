@@ -44,7 +44,7 @@ class OwlDNSServer:
     async def start(self):
         """Starts the async UDP DNS server."""
         loop = asyncio.get_running_loop()
-        print(f"OwlDNS starting on {self.host}:{self.port}...")
+        print(f"OwlDNS starting on {self.host}:{self.port}...", flush=True)
 
         # Create the UDP endpoint
         self.transport, self.protocol = await loop.create_datagram_endpoint(
