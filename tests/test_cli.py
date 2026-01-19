@@ -11,7 +11,8 @@ def test_cli_parsing_records():
             upstream="8.8.8.8",
             record=["test.com=1.1.1.1"],
             reload=False,
-            hosts_file=None
+            hosts_file=None,
+            command="run"
         )
 
         # Mocking OwlDNSServer.start and asyncio.run to avoid real running
@@ -38,7 +39,8 @@ def test_cli_default_records():
             upstream="8.8.8.8",
             record=None,
             reload=False,
-            hosts_file=None
+            hosts_file=None,
+            command="run"
         )
         with patch('owldns.cli.OwlDNSServer') as mock_server:
             with patch('asyncio.run'):
@@ -55,7 +57,8 @@ def test_cli_exception_handling():
             upstream="8.8.8.8",
             record=None,
             reload=False,
-            hosts_file=None
+            hosts_file=None,
+            command="run"
         )
         with patch('owldns.cli.OwlDNSServer'):
             with patch('asyncio.run') as mock_run:
@@ -72,7 +75,8 @@ def test_cli_invalid_record_format():
             upstream="8.8.8.8",
             record=["invalid_format"],
             reload=False,
-            hosts_file=None
+            hosts_file=None,
+            command="run"
         )
         with patch('owldns.cli.OwlDNSServer'):
             with patch('asyncio.run'):

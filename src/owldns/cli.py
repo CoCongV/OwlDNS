@@ -4,6 +4,21 @@ import sys
 from .server import OwlDNSServer
 
 
+def run_tests():
+    """Programmatically runs pytest with coverage settings via subprocess."""
+    import subprocess
+    print("Running OwlDNS coverage tests...", flush=True)
+    try:
+        # We run pytest as a subprocess to ensure coverage tracks all imports correctly
+        cmd = [sys.executable, "-m", "pytest", "--cov=owldns",
+               "--cov-report=term-missing", "tests/"]
+        result = subprocess.run(cmd, check=False)
+        sys.exit(result.returncode)
+    except Exception as e:
+        print(f"Error running tests: {e}", flush=True)
+        sys.exit(1)
+
+
 def start_server(args):
     """Initializes and runs the DNS server with provided arguments."""
     # Parse static records into a dictionary
@@ -88,35 +103,49 @@ def run_reloader():
 def main():
     """
     Entry point for the OwlDNS command-line interface.
-    Parses arguments and starts the DNS server.
     """
     parser = argparse.ArgumentParser(
         description="OwlDNS - A lightweight async DNS server")
 
-    # Selection of host and port for binding
-    parser.add_argument("--host", default="127.0.0.1",
-                        help="Host to bind (default: 127.0.0.1)")
-    parser.add_argument("--port", type=int, default=5353,
-                        help="Port to bind (default: 5353 for non-root testing)")
+    # Use subparsers to handle 'run' and 'test'
+    subparsers = parser.add_subparsers(
+        dest="command", help="Command to execute")
 
-    # Upstream DNS server for forwarding queries
-    parser.add_argument("--upstream", default="8.8.8.8",
-                        help="Upstream DNS server (default: 8.8.8.8)")
-
-    # Static DNS records (A and AAAA records)
-    parser.add_argument("--record", action="append",
-                        help="Static records in format domain=ip (e.g. example.com=1.2.3.4 or example.com=::1)")
-    parser.add_argument(
+    # 'run' command (default)
+    run_parser = subparsers.add_parser(
+        "run", help="Run the DNS server (default)")
+    run_parser.add_argument("--host", default="127.0.0.1",
+                            help="Host to bind (default: 127.0.0.1)")
+    run_parser.add_argument("--port", type=int, default=5353,
+                            help="Port to bind (default: 5353)")
+    run_parser.add_argument("--upstream", default="8.8.8.8",
+                            help="Upstream DNS server (default: 8.8.8.8)")
+    run_parser.add_argument("--record", action="append",
+                            help="Static records in format domain=ip")
+    run_parser.add_argument(
         "--hosts-file", help="Path to a hosts-style file for static mappings")
-    parser.add_argument("--reload", action="store_true",
-                        help="Auto-reload on code changes (development only)")
+    run_parser.add_argument("--reload", action="store_true",
+                            help="Auto-reload on code changes (development only)")
+
+    # 'test' command
+    subparsers.add_parser("test", help="Run coverage tests")
+
+    # Backward compatibility: if no command is provided, default to 'run'
+    # and re-parse arguments as if they were for 'run'.
+    if len(sys.argv) > 1 and sys.argv[1] not in ["run", "test", "-h", "--help"]:
+        sys.argv.insert(1, "run")
 
     args = parser.parse_args()
 
-    if args.reload:
-        run_reloader()
+    if args.command == "test":
+        run_tests()
+    elif args.command == "run" or args.command is None:
+        if hasattr(args, 'reload') and args.reload:
+            run_reloader()
+        else:
+            start_server(args)
     else:
-        start_server(args)
+        parser.print_help()
 
 
 if __name__ == "__main__":
