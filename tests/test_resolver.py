@@ -129,3 +129,41 @@ async def test_resolve_local_aaaa_record():
     assert response.rr[0].rtype == QTYPE.AAAA
     assert str(response.rr[0].rdata) == "::1"
     assert response.header.rcode == 0
+
+@pytest.mark.asyncio
+async def test_resolve_wildcard_record():
+    records = {"*.wild.test": "10.10.10.10"}
+    resolver = Resolver(records=records)
+    
+    # Test sub-domain matching
+    q1 = DNSRecord.question("abc.wild.test", "A")
+    res1 = DNSRecord.parse(await resolver.resolve(q1.pack()))
+    assert str(res1.rr[0].rdata) == "10.10.10.10"
+    
+    # Test multi-level sub-domain
+    q2 = DNSRecord.question("123.abc.wild.test", "A")
+    res2 = DNSRecord.parse(await resolver.resolve(q2.pack()))
+    assert str(res2.rr[0].rdata) == "10.10.10.10"
+    
+    # Test exact suffix matching (wild.test should match *.wild.test)
+    q3 = DNSRecord.question("wild.test", "A")
+    res3 = DNSRecord.parse(await resolver.resolve(q3.pack()))
+    assert str(res3.rr[0].rdata) == "10.10.10.10"
+
+@pytest.mark.asyncio
+async def test_load_hosts_file(tmp_path):
+    hosts_content = """
+    # Comments are ignored
+    127.0.0.1  localhost mypc
+    ::1        localhost
+    192.168.1.5 server.local
+    """
+    hosts_file = tmp_path / "hosts"
+    hosts_file.write_text(hosts_content)
+    
+    resolver = Resolver()
+    resolver.load_hosts_file(str(hosts_file))
+    
+    assert resolver.records["localhost"] in ["127.0.0.1", "::1"]
+    assert resolver.records["mypc"] == "127.0.0.1"
+    assert resolver.records["server.local"] == "192.168.1.5"

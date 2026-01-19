@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import patch, MagicMock
 from owldns.cli import main
 
@@ -10,7 +9,9 @@ def test_cli_parsing_records():
             host="127.0.0.1",
             port=5353,
             upstream="8.8.8.8",
-            record=["test.com=1.1.1.1"]
+            record=["test.com=1.1.1.1"],
+            reload=False,
+            hosts_file=None
         )
 
         # Mocking OwlDNSServer.start and asyncio.run to avoid real running
@@ -23,19 +24,21 @@ def test_cli_parsing_records():
                     host="127.0.0.1",
                     port=5353,
                     records={"test.com": "1.1.1.1"},
-                    upstream="8.8.8.8"
+                    upstream="8.8.8.8",
+                    hosts_file=None
                 )
                 mock_run.assert_called_once()
 
 
 def test_cli_default_records():
     with patch('argparse.ArgumentParser.parse_args') as mock_parse:
-        # No '--record' argument
         mock_parse.return_value = MagicMock(
             host="127.0.0.1",
             port=5353,
             upstream="8.8.8.8",
-            record=None
+            record=None,
+            reload=False,
+            hosts_file=None
         )
         with patch('owldns.cli.OwlDNSServer') as mock_server:
             with patch('asyncio.run'):
@@ -50,13 +53,16 @@ def test_cli_exception_handling():
             host="127.0.0.1",
             port=5353,
             upstream="8.8.8.8",
-            record=None
+            record=None,
+            reload=False,
+            hosts_file=None
         )
-        with patch('owldns.cli.OwlDNSServer') as mock_server:
+        with patch('owldns.cli.OwlDNSServer'):
             with patch('asyncio.run') as mock_run:
                 mock_run.side_effect = Exception("Runtime error")
                 # This should catch the exception and print it
                 main()
+
 
 def test_cli_invalid_record_format():
     with patch('argparse.ArgumentParser.parse_args') as mock_parse:
@@ -64,7 +70,9 @@ def test_cli_invalid_record_format():
             host="127.0.0.1",
             port=5353,
             upstream="8.8.8.8",
-            record=["invalid_format"]
+            record=["invalid_format"],
+            reload=False,
+            hosts_file=None
         )
         with patch('owldns.cli.OwlDNSServer'):
             with patch('asyncio.run'):

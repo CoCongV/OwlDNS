@@ -22,17 +22,28 @@ class Resolver:
         qtype = request.q.qtype
 
         # TODO: Implement GeoDNS & Split-Horizon Routing based on client IP
-        # TODO: Implement Enhanced Static Records & Local Hosts Support
 
         # Handle local A and AAAA record lookups
+        matching_domain = None
         if qname in self.records:
+            matching_domain = qname
+        else:
+            # Check for wildcard matches (e.g., *.example.com)
+            for pattern in self.records:
+                if pattern.startswith("*."):
+                    suffix = pattern[2:]
+                    if qname.endswith(suffix) and (qname == suffix or qname.endswith("." + suffix)):
+                        matching_domain = pattern
+                        break
+
+        if matching_domain:
             if qtype == QTYPE.A:
                 reply.add_answer(
-                    RR(qname, QTYPE.A, rdata=A(self.records[qname])))
+                    RR(qname, QTYPE.A, rdata=A(self.records[matching_domain])))
                 return reply.pack()
             elif qtype == QTYPE.AAAA:
                 reply.add_answer(
-                    RR(qname, QTYPE.AAAA, rdata=AAAA(self.records[qname])))
+                    RR(qname, QTYPE.AAAA, rdata=AAAA(self.records[matching_domain])))
                 return reply.pack()
 
         # If not found locally, forward to upstream
@@ -43,6 +54,25 @@ class Resolver:
                 print(f"Upstream forwarding error for {qname}: {e}")
 
         return reply.pack()
+
+    def load_hosts_file(self, file_path):
+        """
+        Parses a hosts-style file and adds records to the resolver.
+        Standard format: IP domain1 [domain2 ...]
+        """
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                for line in f:
+                    line = line.strip()
+                    if not line or line.startswith('#'):
+                        continue
+                    parts = line.split()
+                    if len(parts) >= 2:
+                        ip = parts[0]
+                        for domain in parts[1:]:
+                            self.records[domain] = ip
+        except Exception as e:
+            print(f"Error loading hosts file {file_path}: {e}")
 
     async def forward(self, data):
         """

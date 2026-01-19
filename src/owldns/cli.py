@@ -15,21 +15,22 @@ def start_server(args):
                 records[domain] = ip
             except ValueError:
                 print(
-                    f"Warning: Invalid record format '{r}'. Expected 'domain=ip'.")
+                    f"Warning: Invalid record format '{r}'. Expected 'domain=ip'.", flush=True)
     else:
         # Default example record if none provided
         records = {"example.com": "1.2.3.4"}
 
     # Initialize and run the server
     server = OwlDNSServer(host=args.host, port=args.port,
-                          records=records, upstream=args.upstream)
+                          records=records, upstream=args.upstream,
+                          hosts_file=args.hosts_file)
 
     try:
         asyncio.run(server.start())
     except KeyboardInterrupt:
-        print("\nOwlDNS stopped.")
+        print("\nOwlDNS stopped.", flush=True)
     except Exception as e:
-        print(f"Error: {e}")
+        print(f"Error: {e}", flush=True)
 
 
 def run_reloader():
@@ -105,7 +106,8 @@ def main():
     # Static DNS records (A and AAAA records)
     parser.add_argument("--record", action="append",
                         help="Static records in format domain=ip (e.g. example.com=1.2.3.4 or example.com=::1)")
-
+    parser.add_argument(
+        "--hosts-file", help="Path to a hosts-style file for static mappings")
     parser.add_argument("--reload", action="store_true",
                         help="Auto-reload on code changes (development only)")
 

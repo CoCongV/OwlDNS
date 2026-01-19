@@ -34,10 +34,12 @@ class OwlDNSServer:
     The main DNS server class that manages the resolver and the network endpoint.
     """
 
-    def __init__(self, host="0.0.0.0", port=53, records=None, upstream="8.8.8.8"):
+    def __init__(self, host="0.0.0.0", port=53, records=None, upstream="8.8.8.8", hosts_file=None):
         self.host = host
         self.port = port
         self.resolver = Resolver(records, upstream)
+        if hosts_file:
+            self.resolver.load_hosts_file(hosts_file)
         self.transport = None
         self.protocol = None
 
