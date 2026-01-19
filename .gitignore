@@ -11,6 +11,5 @@ build/
 venv/
 ENV/
 .env
-poetry.lock
 .idea/
 .vscode/

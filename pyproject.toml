@@ -1,0 +1,23 @@
+[project]
+name = "owldns"
+version = "0.1.0"
+description = "A lightweight, async DNS server in Python"
+authors = [{ name = "cong", email = "cong.lv.yx@gmail.com" }]
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = ["dnslib"]
+
+[project.scripts]
+owldns = "owldns.cli:main"
+
+[tool.poetry]
+packages = [{ include = "owldns", from = "src" }]
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0.0"
+pytest-asyncio = "^0.23.0"
+pytest-cov = "^4.1.0"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
