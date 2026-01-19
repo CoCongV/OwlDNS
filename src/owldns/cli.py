@@ -5,6 +5,28 @@ import uvloop
 from .server import OwlDNSServer
 
 
+def load_hosts(file_path):
+    """
+    Parses a hosts-style file and returns a dictionary of records.
+    Standard format: IP domain1 [domain2 ...]
+    """
+    records = {}
+    try:
+        with open(file_path, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                if not line or line.startswith('#'):
+                    continue
+                parts = line.split()
+                if len(parts) >= 2:
+                    ip = parts[0]
+                    for domain in parts[1:]:
+                        records[domain] = ip
+    except Exception as e:
+        print(f"Error loading hosts file {file_path}: {e}", flush=True)
+    return records
+
+
 def run_tests():
     """Programmatically runs pytest with coverage settings via subprocess."""
     import subprocess
@@ -27,24 +49,12 @@ def run_tests():
 
 def start_server(args):
     """Initializes and runs the DNS server with provided arguments."""
-    # Parse static records into a dictionary
-    records = {}
-    if args.record:
-        for r in args.record:
-            try:
-                domain, ip = r.split("=", 1)
-                records[domain] = ip
-            except ValueError:
-                print(
-                    f"Warning: Invalid record format '{r}'. Expected 'domain=ip'.", flush=True)
-    else:
-        # Default example record if none provided
-        records = {"example.com": "1.2.3.4"}
+    # Load records from the specified hosts file
+    records = load_hosts(args.hosts_file)
 
     # Initialize and run the server
     server = OwlDNSServer(host=args.host, port=args.port,
-                          records=records, upstream=args.upstream,
-                          hosts_file=args.hosts_file)
+                          records=records, upstream=args.upstream)
 
     try:
         asyncio.run(server.start())
@@ -128,10 +138,9 @@ def main():
                             help="Port to bind (default: 5353)")
     run_parser.add_argument("--upstream", default="8.8.8.8",
                             help="Upstream DNS server (default: 8.8.8.8)")
-    run_parser.add_argument("--record", action="append",
-                            help="Static records in format domain=ip")
     run_parser.add_argument(
-        "--hosts-file", help="Path to a hosts-style file for static mappings")
+        "--hosts-file", default="/etc/hosts",
+        help="Path to a hosts-style file for static mappings (default: /etc/hosts)")
     run_parser.add_argument("--reload", action="store_true",
                             help="Auto-reload on code changes (development only)")
 

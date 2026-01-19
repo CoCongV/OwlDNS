@@ -36,17 +36,26 @@ pip install .
 
 ### 2. 使用命令行 (CLI)
 
-默认运行（监听 `127.0.0.1:5353`）：
+### 运行服务器
 
+默认运行：
 ```bash
-owldns
+owldns run
+```
+这将监听 `127.0.0.1:5353`，并自动读取系统 `/etc/hosts` 文件。
+
+自定义配置：
+```bash
+owldns run --port 54 --upstream 1.1.1.1 --hosts-file ./my_hosts
 ```
 
-自定义配置（端口、上游服务器、静态解析记录）：
-
-```bash
-owldns --host 0.0.0.0 --port 5353 --upstream 1.1.1.1 --record example.com=1.2.3.4 --record mytest.lan=192.168.1.100
-```
+| 参数 | 描述 | 默认值 |
+| :--- | :--- | :--- |
+| `--host` | 监听地址 | `127.0.0.1` |
+| `--port` | 监听端口 | `5353` |
+| `--upstream` | 上游 DNS | `8.8.8.8` |
+| `--hosts-file` | Hosts 映射文件 | `/etc/hosts` |
+| `--reload` | 自动重载 (开发模式) | `False` |
 
 ### 3. 作为库调用
 

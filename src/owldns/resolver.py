@@ -55,25 +55,6 @@ class Resolver:
 
         return reply.pack()
 
-    def load_hosts_file(self, file_path):
-        """
-        Parses a hosts-style file and adds records to the resolver.
-        Standard format: IP domain1 [domain2 ...]
-        """
-        try:
-            with open(file_path, 'r', encoding='utf-8') as f:
-                for line in f:
-                    line = line.strip()
-                    if not line or line.startswith('#'):
-                        continue
-                    parts = line.split()
-                    if len(parts) >= 2:
-                        ip = parts[0]
-                        for domain in parts[1:]:
-                            self.records[domain] = ip
-        except Exception as e:
-            print(f"Error loading hosts file {file_path}: {e}")
-
     async def forward(self, data):
         """
         Forwards the DNS query to an upstream DNS server via UDP.
