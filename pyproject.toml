@@ -17,6 +17,7 @@ packages = [{ include = "owldns", from = "src" }]
 pytest = "^8.0.0"
 pytest-asyncio = "^0.23.0"
 pytest-cov = "^4.1.0"
+watchdog = "^4.0.0"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
