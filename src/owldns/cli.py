@@ -7,11 +7,16 @@ from .server import OwlDNSServer
 def run_tests():
     """Programmatically runs pytest with coverage settings via subprocess."""
     import subprocess
-    print("Running OwlDNS coverage tests...", flush=True)
+    print("Running OwlDNS coverage tests (including HTML report)...", flush=True)
     try:
         # We run pytest as a subprocess to ensure coverage tracks all imports correctly
-        cmd = [sys.executable, "-m", "pytest", "--cov=owldns",
-               "--cov-report=term-missing", "tests/"]
+        cmd = [
+            sys.executable, "-m", "pytest",
+            "--cov=owldns",
+            "--cov-report=term-missing",
+            "--cov-report=html:htmlcov",
+            "tests/"
+        ]
         result = subprocess.run(cmd, check=False)
         sys.exit(result.returncode)
     except Exception as e:
@@ -128,7 +133,8 @@ def main():
                             help="Auto-reload on code changes (development only)")
 
     # 'test' command
-    subparsers.add_parser("test", help="Run coverage tests")
+    subparsers.add_parser(
+        "test", help="Run coverage tests (generates HTML report)")
 
     # Backward compatibility: if no command is provided, default to 'run'
     # and re-parse arguments as if they were for 'run'.
