@@ -21,9 +21,9 @@ def main():
     parser.add_argument("--upstream", default="8.8.8.8",
                         help="Upstream DNS server (default: 8.8.8.8)")
 
-    # Static DNS records (A records only)
+    # Static DNS records (A and AAAA records)
     parser.add_argument("--record", action="append",
-                        help="Static records in format domain=ip (e.g. example.com=1.2.3.4)")
+                        help="Static records in format domain=ip (e.g. example.com=1.2.3.4 or example.com=::1)")
 
     args = parser.parse_args()
 
