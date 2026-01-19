@@ -2,14 +2,15 @@ import asyncio
 import argparse
 import sys
 import uvloop
-from .server import OwlDNSServer
-from .utils import load_hosts
+from owldns.server import OwlDNSServer
+from owldns.utils import load_hosts
+from owldns import setup_logger, logger
 
 
 def run_tests():
     """Programmatically runs pytest with coverage settings via subprocess."""
     import subprocess
-    print("Running OwlDNS coverage tests (including HTML report)...", flush=True)
+    logger.info("Running OwlDNS coverage tests (including HTML report)...")
     try:
         # We run pytest as a subprocess to ensure coverage tracks all imports correctly
         cmd = [
@@ -22,7 +23,7 @@ def run_tests():
         result = subprocess.run(cmd, check=False)
         sys.exit(result.returncode)
     except Exception as e:
-        print(f"Error running tests: {e}", flush=True)
+        logger.error(f"Error running tests: {e}")
         sys.exit(1)
 
 
@@ -38,9 +39,9 @@ def start_server(args):
     try:
         asyncio.run(server.start())
     except KeyboardInterrupt:
-        print("\nOwlDNS stopped.", flush=True)
+        logger.info("OwlDNS stopped.")
     except Exception as e:
-        print(f"Error: {e}", flush=True)
+        logger.error(f"Error: {e}")
 
 
 def run_reloader():
@@ -62,7 +63,7 @@ def run_reloader():
             if self.process:
                 self.process.terminate()
                 self.process.wait()
-            print("Change detected, restarting OwlDNS...", flush=True)
+            logger.info("Change detected, restarting OwlDNS...")
             self.process = subprocess.Popen(self.cmd)
 
         def on_any_event(self, event):
@@ -104,6 +105,11 @@ def main():
     parser = argparse.ArgumentParser(
         description="OwlDNS - A lightweight async DNS server")
 
+    parser.add_argument("--log-level", default="INFO",
+                        choices=["DEBUG", "INFO",
+                                 "WARNING", "ERROR", "CRITICAL"],
+                        help="Set the logging level (default: INFO)")
+
     # Use subparsers to handle 'run' and 'test'
     subparsers = parser.add_subparsers(
         dest="command", help="Command to execute")
@@ -133,6 +139,9 @@ def main():
         sys.argv.insert(1, "run")
 
     args = parser.parse_args()
+
+    # Initialize logger
+    setup_logger(level=args.log_level)
 
     if args.command == "test":
         run_tests()

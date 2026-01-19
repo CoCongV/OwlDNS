@@ -1,3 +1,32 @@
+import logging
+import sys
+
+# Global logger for the owldns package
+logger = logging.getLogger("owldns")
+
+
+def setup_logger(level="INFO"):
+    """
+    Configures the project-wide logger.
+    """
+    logger = logging.getLogger("owldns")
+    if isinstance(level, str):
+        level = getattr(logging, level.upper(), logging.INFO)
+
+    logger.setLevel(level)
+
+    if not logger.handlers:
+        handler = logging.StreamHandler(sys.stdout)
+        formatter = logging.Formatter(
+            '%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+            datefmt='%Y-%m-%d %H:%M:%S'
+        )
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+
+    return logger
+
+
 def load_hosts(file_path):
     """
     Parses a hosts-style file and returns a dictionary of records.
@@ -16,5 +45,6 @@ def load_hosts(file_path):
                     for domain in parts[1:]:
                         records[domain] = ip
     except Exception as e:
-        print(f"Error loading hosts file {file_path}: {e}", flush=True)
+        logger.error(
+            f"Error loading hosts file {file_path}: {e}")
     return records

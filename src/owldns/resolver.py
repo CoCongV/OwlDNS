@@ -1,6 +1,7 @@
 import asyncio
 from dnslib import DNSRecord, QTYPE, RR, A, AAAA
 import socket
+from owldns.utils import logger
 
 
 class Resolver:
@@ -51,7 +52,7 @@ class Resolver:
             try:
                 return await self.forward(data)
             except Exception as e:
-                print(f"Upstream forwarding error for {qname}: {e}")
+                logger.error(f"Upstream forwarding error for {qname}: {e}")
 
         return reply.pack()
 
