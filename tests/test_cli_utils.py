@@ -1,5 +1,5 @@
 import pytest
-from owldns.cli import load_hosts
+from owldns.utils import load_hosts
 
 
 def test_load_hosts_basic(tmp_path):
