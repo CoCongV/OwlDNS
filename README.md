@@ -5,7 +5,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](#)
 [![Coverage](https://img.shields.io/badge/coverage-99%25-brightgreen.svg)](#)
 
-**OwlDNS** 是一个极简、轻量、且具备“反重力（Antigravity）”哲学的 Python 异步 DNS 服务端程序。
+**OwlDNS** 是一个极简、轻量的 Python 异步 DNS 服务端程序。
 
 ## ✨ 特性
 
