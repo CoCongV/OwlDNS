@@ -112,3 +112,20 @@ async def test_forward_generic_error():
         with patch.object(loop, 'sock_connect', side_effect=Exception("Socket error")):
             with pytest.raises(RuntimeError, match="Failed to forward to upstream"):
                 await resolver.forward(data)
+
+@pytest.mark.asyncio
+async def test_resolve_local_aaaa_record():
+    records = {"ipv6.test": "::1"}
+    resolver = Resolver(records=records)
+    
+    # Create a DNS AAAA record query for ipv6.test
+    q = DNSRecord.question("ipv6.test", "AAAA")
+    data = q.pack()
+    
+    response_data = await resolver.resolve(data)
+    response = DNSRecord.parse(response_data)
+    
+    assert len(response.rr) == 1
+    assert response.rr[0].rtype == QTYPE.AAAA
+    assert str(response.rr[0].rdata) == "::1"
+    assert response.header.rcode == 0
