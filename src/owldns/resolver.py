@@ -1,5 +1,5 @@
 import asyncio
-from dnslib import DNSRecord, QTYPE, RR, A
+from dnslib import DNSRecord, QTYPE, RR, A, AAAA
 import socket
 
 
@@ -21,11 +21,18 @@ class Resolver:
         qname = str(request.q.qname).rstrip('.')
         qtype = request.q.qtype
 
-        # Only handle A records for simplicity as requested
-        if qtype == QTYPE.A:
-            if qname in self.records:
+        # TODO: Implement GeoDNS & Split-Horizon Routing based on client IP
+        # TODO: Implement Enhanced Static Records & Local Hosts Support
+
+        # Handle local A and AAAA record lookups
+        if qname in self.records:
+            if qtype == QTYPE.A:
                 reply.add_answer(
                     RR(qname, QTYPE.A, rdata=A(self.records[qname])))
+                return reply.pack()
+            elif qtype == QTYPE.AAAA:
+                reply.add_answer(
+                    RR(qname, QTYPE.AAAA, rdata=AAAA(self.records[qname])))
                 return reply.pack()
 
         # If not found locally, forward to upstream
