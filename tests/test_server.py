@@ -51,7 +51,7 @@ async def test_server_start_stop():
 
 @pytest.mark.asyncio
 async def test_end_to_end_local_resolution():
-    records = {"local.test": "127.0.0.1"}
+    records = {"local.test": ["127.0.0.1"]}
     server = OwlDNSServer(host="127.0.0.1", port=5355, records=records)
 
     server_task = asyncio.create_task(server.start())
@@ -101,13 +101,14 @@ async def test_end_to_end_local_resolution():
         except asyncio.CancelledError:
             pass
 
+
 @pytest.mark.asyncio
 async def test_protocol_handle_query_error():
     resolver = MagicMock()
     resolver.resolve = AsyncMock(side_effect=Exception("Resolution failed"))
-    
+
     protocol = OwlDNSProtocol(resolver)
     addr = ("127.0.0.1", 12345)
-    
+
     # Should catch exception and print it (lines 28-29 in server.py)
     await protocol.handle_query(b"data", addr)

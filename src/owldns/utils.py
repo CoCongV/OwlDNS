@@ -27,12 +27,12 @@ def setup_logger(level: str | int = "INFO") -> logging.Logger:
     return logger
 
 
-def load_hosts(file_path: str) -> dict[str, str]:
+def load_hosts(file_path: str) -> dict[str, list[str]]:
     """
     Parses a hosts-style file and returns a dictionary of records.
-    Standard format: IP domain1 [domain2 ...]
+    Supports multiple IPs (IPv4 and IPv6) for the same domain.
     """
-    records = {}
+    records: dict[str, list[str]] = {}
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             for line in f:
@@ -43,7 +43,10 @@ def load_hosts(file_path: str) -> dict[str, str]:
                 if len(parts) >= 2:
                     ip = parts[0]
                     for domain in parts[1:]:
-                        records[domain] = ip
+                        if domain not in records:
+                            records[domain] = []
+                        if ip not in records[domain]:
+                            records[domain].append(ip)
     except Exception as e:
         logger.error("Error loading hosts file %s: %s", file_path, e)
     return records

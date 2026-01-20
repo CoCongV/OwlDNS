@@ -7,7 +7,7 @@ from owldns.resolver import Resolver
 
 @pytest.mark.asyncio
 async def test_resolve_local_record():
-    records = {"example.com": "1.2.3.4"}
+    records = {"example.com": ["1.2.3.4"]}
     resolver = Resolver(records=records)
 
     # Create a DNS A record query for example.com
@@ -118,7 +118,7 @@ async def test_forward_generic_error():
 
 @pytest.mark.asyncio
 async def test_resolve_local_aaaa_record():
-    records = {"ipv6.test": "::1"}
+    records = {"ipv6.test": ["::1"]}
     resolver = Resolver(records=records)
 
     # Create a DNS AAAA record query for ipv6.test
@@ -136,7 +136,7 @@ async def test_resolve_local_aaaa_record():
 
 @pytest.mark.asyncio
 async def test_resolve_wildcard_record():
-    records = {"*.wild.test": "10.10.10.10"}
+    records = {"*.wild.test": ["10.10.10.10"]}
     resolver = Resolver(records=records)
 
     # Test sub-domain matching

@@ -36,7 +36,7 @@ class OwlDNSServer:
     """
 
     def __init__(self, host: str = "0.0.0.0", port: int = 53,
-                 records: dict[str, str] | None = None, upstream: str = "1.1.1.1"):
+                 records: dict[str, list[str]] | None = None, upstream: str = "1.1.1.1"):
         self.host: str = host
         self.port: int = port
         self.resolver: Resolver = Resolver(records, upstream)

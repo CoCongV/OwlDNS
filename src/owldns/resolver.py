@@ -10,8 +10,8 @@ class Resolver:
     DNS Resolver that handles local record lookup and upstream forwarding.
     """
 
-    def __init__(self, records: dict[str, str] | None = None, upstream: str | None = "1.1.1.1"):
-        self.records: dict[str, str] = records or {}
+    def __init__(self, records: dict[str, list[str]] | None = None, upstream: str | None = "1.1.1.1"):
+        self.records: dict[str, list[str]] = records or {}
         self.upstream: str | None = upstream
 
     async def resolve(self, data: bytes) -> bytes:
@@ -39,14 +39,19 @@ class Resolver:
                         break
 
         if matching_domain:
+            ips = self.records[matching_domain]
             if qtype == QTYPE.A:
-                reply.add_answer(
-                    RR(qname, QTYPE.A, rdata=A(self.records[matching_domain])))
-                return reply.pack()
+                for ip in ips:
+                    if ":" not in ip:  # IPv4
+                        reply.add_answer(RR(qname, QTYPE.A, rdata=A(ip)))
+                if reply.rr:
+                    return reply.pack()
             elif qtype == QTYPE.AAAA:
-                reply.add_answer(
-                    RR(qname, QTYPE.AAAA, rdata=AAAA(self.records[matching_domain])))
-                return reply.pack()
+                for ip in ips:
+                    if ":" in ip:  # IPv6
+                        reply.add_answer(RR(qname, QTYPE.AAAA, rdata=AAAA(ip)))
+                if reply.rr:
+                    return reply.pack()
 
         # If not found locally, forward to upstream
         if self.upstream:

@@ -14,9 +14,10 @@ def test_load_hosts_basic(tmp_path):
 
     records = load_hosts(str(hosts_file))
 
-    assert records["localhost"] in ["127.0.0.1", "::1"]
-    assert records["mypc"] == "127.0.0.1"
-    assert records["server.local"] == "192.168.1.5"
+    assert "127.0.0.1" in records["localhost"]
+    assert "::1" in records["localhost"]
+    assert records["mypc"] == ["127.0.0.1"]
+    assert records["server.local"] == ["192.168.1.5"]
 
 
 def test_load_hosts_invalid_file():
