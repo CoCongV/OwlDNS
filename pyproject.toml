@@ -4,8 +4,8 @@ version = "0.1.0"
 description = "A lightweight, async DNS server in Python"
 authors = [{ name = "cong", email = "cong.lv.yx@gmail.com" }]
 readme = "README.md"
-requires-python = ">=3.9"
-dependencies = ["dnslib", "uvloop>=0.19.0"]
+requires-python = ">=3.10"
+dependencies = ["dnslib", "uvloop>=0.19.0", "click (>=8.3.1,<9.0.0)"]
 
 [project.scripts]
 owldns = "owldns.cli:main"

@@ -1,7 +1,7 @@
 import asyncio
-import argparse
 import sys
 import uvloop
+import click
 from owldns.server import OwlDNSServer
 from owldns.utils import load_hosts
 from owldns import setup_logger, logger
@@ -27,14 +27,14 @@ def run_tests():
         sys.exit(1)
 
 
-def start_server(args):
-    """Initializes and runs the DNS server with provided arguments."""
+def start_server(host, port, upstream, hosts_file):
+    """Initializes and runs the DNS server."""
     # Load records from the specified hosts file
-    records = load_hosts(args.hosts_file)
+    records = load_hosts(hosts_file)
 
     # Initialize and run the server
-    server = OwlDNSServer(host=args.host, port=args.port,
-                          records=records, upstream=args.upstream)
+    server = OwlDNSServer(host=host, port=port,
+                          records=records, upstream=upstream)
 
     try:
         asyncio.run(server.start())
@@ -44,12 +44,13 @@ def start_server(args):
         logger.error(f"Error: {e}")
 
 
-def run_reloader():
+def run_reloader(ctx_args):
     """Starts a watchdog observer to restart the process on file changes."""
     from watchdog.observers import Observer
     from watchdog.events import FileSystemEventHandler
     import subprocess
     import time
+    import shutil
 
     class ReloadHandler(FileSystemEventHandler):
         """Restarts the subprocess when a .py file is modified."""
@@ -71,15 +72,12 @@ def run_reloader():
                 return
             self.restart()
 
-    # Construct the command to restart (stripping --debug)
-    # We use "owldns" if available in PATH, otherwise fallback to python -m
-    cmd = ["owldns"] + [arg for arg in sys.argv[1:] if arg != "--debug"]
-
-    # Check if 'owldns' is in PATH, if not, use python -m
-    import shutil
+    # Construct the command to restart (keeping all arguments)
+    base_cmd = "owldns"
     if not shutil.which("owldns"):
-        cmd = [sys.executable, "-m", "owldns.cli"] + \
-            [arg for arg in sys.argv[1:] if arg != "--debug"]
+        cmd = [sys.executable, "-m", "owldns.cli"] + ctx_args
+    else:
+        cmd = [base_cmd] + ctx_args
 
     handler = ReloadHandler(cmd)
     observer = Observer()
@@ -96,69 +94,75 @@ def run_reloader():
             handler.process.terminate()
 
 
-def main():
-    """
-    Entry point for the OwlDNS command-line interface.
-    """
+@click.group(invoke_without_command=True)
+@click.option("--log-level", default="INFO",
+              type=click.Choice(["DEBUG", "INFO", "WARNING",
+                                "ERROR", "CRITICAL"], case_sensitive=False),
+              help="Set the logging level (default: INFO)")
+@click.pass_context
+def cli(ctx, log_level):
+    """OwlDNS - A lightweight async DNS server."""
     uvloop.install()
+    ctx.ensure_object(dict)
+    ctx.obj['log_level'] = log_level
 
-    parser = argparse.ArgumentParser(
-        description="OwlDNS - A lightweight async DNS server")
 
-    parser.add_argument("--log-level", default="INFO",
-                        choices=["DEBUG", "INFO",
-                                 "WARNING", "ERROR", "CRITICAL"],
-                        help="Set the logging level (default: INFO)")
+@cli.command()
+def test():
+    """Run coverage tests (generates HTML report)."""
+    import subprocess
+    logger.info("Running OwlDNS coverage tests (including HTML report)...")
+    try:
+        cmd = [
+            sys.executable, "-m", "pytest",
+            "--cov=owldns",
+            "--cov-report=term-missing",
+            "--cov-report=html:htmlcov",
+            "tests/"
+        ]
+        result = subprocess.run(cmd, check=False)
+        sys.exit(result.returncode)
+    except Exception as e:
+        logger.error(f"Error running tests: {e}")
+        sys.exit(1)
 
-    # Use subparsers to handle 'run' and 'test'
-    subparsers = parser.add_subparsers(
-        dest="command", help="Command to execute")
 
-    # 'run' command (default)
-    run_parser = subparsers.add_parser(
-        "run", help="Run the DNS server (default)")
-    run_parser.add_argument("--host", default="127.0.0.1",
-                            help="Host to bind (default: 127.0.0.1)")
-    run_parser.add_argument("--port", type=int, default=5353,
-                            help="Port to bind (default: 5353)")
-    run_parser.add_argument("--upstream", default="8.8.8.8",
-                            help="Upstream DNS server (default: 8.8.8.8)")
-    run_parser.add_argument(
-        "--hosts-file", default="/etc/hosts",
-        help="Path to a hosts-style file for static mappings (default: /etc/hosts)")
-    run_parser.add_argument("--debug", action="store_true",
-                            help="Enable debug mode (auto-reload + DEBUG log level)")
+@cli.command()
+@click.option("--host", default="127.0.0.1", help="Host to bind (default: 127.0.0.1)")
+@click.option("--port", type=int, default=5353, help="Port to bind (default: 5353)")
+@click.option("--upstream", default="8.8.8.8", help="Upstream DNS server (default: 8.8.8.8)")
+@click.option("--hosts-file", default="/etc/hosts", type=click.Path(exists=True),
+              help="Path to a hosts-style file for static mappings (default: /etc/hosts)")
+@click.option("--debug", is_flag=True, help="Enable debug mode (auto-reload + DEBUG log level)")
+@click.pass_context
+def run(ctx, host, port, upstream, hosts_file, debug):
+    """Run the DNS server."""
+    log_level = ctx.obj['log_level']
+    reload = False
 
-    # 'test' command
-    subparsers.add_parser(
-        "test", help="Run coverage tests (generates HTML report)")
+    if debug:
+        log_level = "DEBUG"
+        reload = True
 
-    # Backward compatibility: if no command is provided, default to 'run'
-    # and re-parse arguments as if they were for 'run'.
-    if len(sys.argv) > 1 and sys.argv[1] not in ["run", "test", "-h", "--help"]:
-        sys.argv.insert(1, "run")
+    setup_logger(level=log_level)
 
-    args = parser.parse_args()
-
-    # Handle debug mode: force DEBUG level and enable reload
-    if hasattr(args, 'debug') and args.debug:
-        args.log_level = "DEBUG"
-        args.reload = True
+    if reload:
+        run_reloader(sys.argv[1:])
     else:
-        args.reload = False
+        start_server(host, port, upstream, hosts_file)
 
-    # Initialize logger
-    setup_logger(level=args.log_level)
 
-    if args.command == "test":
-        run_tests()
-    elif args.command == "run" or args.command is None:
-        if args.reload:
-            run_reloader()
-        else:
-            start_server(args)
-    else:
-        parser.print_help()
+def main():
+    """Entry point wrapper to handle default command."""
+    # To maintain previous "default to run" behavior, we inject 'run' if no subcommand.
+    if len(sys.argv) == 1:
+        sys.argv.append("run")
+    elif len(sys.argv) > 1 and sys.argv[1] not in ["run", "test", "--help", "-h"]:
+        if not sys.argv[1].startswith("-"):
+            sys.argv.insert(1, "run")
+
+    # Click uses its own sys.argv handling when cli() is called
+    cli()
 
 
 if __name__ == "__main__":
