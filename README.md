@@ -1,9 +1,9 @@
 # 🦉 OwlDNS
 
 [![Project Status](https://img.shields.io/badge/status-ready-success.svg)](#)
-[![Python Version](https://img.shields.io/badge/python-3.9+-blue.svg)](#)
+[![Python Version](https://img.shields.io/badge/python-3.14+-blue.svg)](#)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](#)
-[![Coverage](https://img.shields.io/badge/coverage-99%25-brightgreen.svg)](#)
+[![Coverage](https://img.shields.io/badge/coverage-92%25-brightgreen.svg)](#)
 
 **OwlDNS** 是一个极简、轻量的 Python 异步 DNS 服务端程序。
 
@@ -53,7 +53,7 @@ owldns run --port 54 --upstream 1.1.1.1 --hosts-file ./my_hosts
 | :--- | :--- | :--- |
 | `--host` | 监听地址 | `127.0.0.1` |
 | `--port` | 监听端口 | `5353` |
-| `--upstream` | 上游 DNS | `8.8.8.8` |
+| `--upstream` | 上游 DNS | `1.1.1.1` |
 | `--hosts-file` | Hosts 映射文件 | `/etc/hosts` |
 | `--reload` | 自动重载 (开发模式) | `False` |
 
