@@ -1,5 +1,5 @@
-from __future__ import annotations
 import asyncio
+import os
 import shutil
 import subprocess
 import sys
@@ -59,14 +59,19 @@ def run_reloader(ctx_args: list[str]) -> None:
         def __init__(self, cmd):
             self.cmd = cmd
             self.process = None
+            logger.info("Starting OwlDNS with auto-reload...")
             self.restart()
 
         def restart(self):
             if self.process:
                 self.process.terminate()
                 self.process.wait()
-            logger.info("Change detected, restarting OwlDNS...")
-            self.process = subprocess.Popen(self.cmd)
+                logger.info("Change detected, restarting OwlDNS...")
+
+            # Pass environment variable to child to prevent reloader recursion
+            env = os.environ.copy()
+            env["OWLDNS_RELOAD_CHILD"] = "1"
+            self.process = subprocess.Popen(self.cmd, env=env)
 
         def on_any_event(self, event):
             if event.is_directory or not event.src_path.endswith('.py'):
@@ -145,7 +150,7 @@ def run(ctx: click.Context, host: str, port: int, upstream: str, hosts_file: str
 
     setup_logger(level=log_level)
 
-    if reload:
+    if reload and os.environ.get("OWLDNS_RELOAD_CHILD") != "1":
         run_reloader(sys.argv[1:])
     else:
         start_server(host, port, upstream, hosts_file)
