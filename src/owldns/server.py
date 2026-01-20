@@ -27,7 +27,7 @@ class OwlDNSProtocol(asyncio.DatagramProtocol):
             if response:
                 self.transport.sendto(response, addr)
         except Exception as e:
-            logger.error(f"Error handling query from {addr}: {e}")
+            logger.error("Error handling query from %s: %s", addr, e)
 
 
 class OwlDNSServer:
@@ -45,7 +45,7 @@ class OwlDNSServer:
     async def start(self):
         """Starts the async UDP DNS server."""
         loop = asyncio.get_running_loop()
-        logger.info(f"OwlDNS starting on {self.host}:{self.port}...")
+        logger.info("OwlDNS starting on %s:%d...", self.host, self.port)
 
         # Create the UDP endpoint
         self.transport, self.protocol = await loop.create_datagram_endpoint(

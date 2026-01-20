@@ -45,7 +45,7 @@ def start_server(host, port, upstream, hosts_file):
     except KeyboardInterrupt:
         logger.info("OwlDNS stopped.")
     except Exception as e:
-        logger.error(f"Error: {e}")
+        logger.error("Error: %s", e)
 
 
 def run_reloader(ctx_args):
@@ -120,7 +120,7 @@ def test():
         result = subprocess.run(cmd, check=False)
         sys.exit(result.returncode)
     except Exception as e:
-        logger.error(f"Error running tests: {e}")
+        logger.error("Error running tests: %s", e)
         sys.exit(1)
 
 

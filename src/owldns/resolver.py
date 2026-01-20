@@ -52,7 +52,7 @@ class Resolver:
             try:
                 return await self.forward(data)
             except Exception as e:
-                logger.error(f"Upstream forwarding error for {qname}: {e}")
+                logger.error("Upstream forwarding error for %s: %s", qname, e)
 
         return reply.pack()
 

@@ -9,7 +9,6 @@ def setup_logger(level="INFO"):
     """
     Configures the project-wide logger.
     """
-    logger = logging.getLogger("owldns")
     if isinstance(level, str):
         level = getattr(logging, level.upper(), logging.INFO)
 
@@ -45,6 +44,5 @@ def load_hosts(file_path):
                     for domain in parts[1:]:
                         records[domain] = ip
     except Exception as e:
-        logger.error(
-            f"Error loading hosts file {file_path}: {e}")
+        logger.error("Error loading hosts file %s: %s", file_path, e)
     return records
