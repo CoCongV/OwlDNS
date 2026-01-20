@@ -1,12 +1,14 @@
 import asyncio
-import sys
-import uvloop
-import click
-import subprocess
-import time
 import shutil
+import subprocess
+import sys
+import time
+
+import click
+import uvloop
 from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
+
 from owldns.server import OwlDNSServer
 from owldns.utils import load_hosts
 from owldns import setup_logger, logger
