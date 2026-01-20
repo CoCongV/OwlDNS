@@ -41,6 +41,8 @@ class Resolver:
 
         if matching_domain:
             ips = self.records[matching_domain]
+            logger.debug("Local hit: %s [%s] -> %s",
+                         qname, QTYPE.get(qtype), ips)
             if qtype == QTYPE.A:
                 for ip in ips:
                     if ":" not in ip:  # IPv4
@@ -54,10 +56,14 @@ class Resolver:
                 if reply.rr:
                     return reply.pack()
 
+        logger.debug("Local miss: %s [%s]", qname, QTYPE.get(qtype))
+
         # If not found locally, forward to upstream
         if self.upstream:
             try:
-                return await self.forward(data)
+                response = await self.forward(data)
+                logger.debug("Upstream hit: %s [%s]", qname, QTYPE.get(qtype))
+                return response
             except Exception as e:
                 logger.error("Upstream forwarding error for %s: %s", qname, e)
 
