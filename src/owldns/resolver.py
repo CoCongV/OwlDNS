@@ -9,7 +9,7 @@ class Resolver:
     DNS Resolver that handles local record lookup and upstream forwarding.
     """
 
-    def __init__(self, records=None, upstream="8.8.8.8"):
+    def __init__(self, records=None, upstream="1.1.1.1"):
         self.records = records or {}
         self.upstream = upstream
 

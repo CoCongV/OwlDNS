@@ -128,7 +128,7 @@ def test():
 @cli.command()
 @click.option("--host", default="127.0.0.1", help="Host to bind (default: 127.0.0.1)")
 @click.option("--port", type=int, default=5353, help="Port to bind (default: 5353)")
-@click.option("--upstream", default="8.8.8.8", help="Upstream DNS server (default: 8.8.8.8)")
+@click.option("--upstream", default="1.1.1.1", help="Upstream DNS server (default: 1.1.1.1)")
 @click.option("--hosts-file", default="/etc/hosts", type=click.Path(exists=True),
               help="Path to a hosts-style file for static mappings (default: /etc/hosts)")
 @click.option("--debug", is_flag=True, help="Enable debug mode (auto-reload + DEBUG log level)")

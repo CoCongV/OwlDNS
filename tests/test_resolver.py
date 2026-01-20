@@ -38,7 +38,7 @@ async def test_resolve_not_found_no_upstream():
 
 @pytest.mark.asyncio
 async def test_resolve_forward_to_upstream():
-    resolver = Resolver(records={}, upstream="8.8.8.8")
+    resolver = Resolver(records={}, upstream="1.1.1.1")
 
     q = DNSRecord.question("google.com")
     data = q.pack()
@@ -54,7 +54,7 @@ async def test_resolve_forward_to_upstream():
 
 @pytest.mark.asyncio
 async def test_forward_error_handling():
-    resolver = Resolver(records={}, upstream="8.8.8.8")
+    resolver = Resolver(records={}, upstream="1.1.1.1")
     q = DNSRecord.question("error.com")
     data = q.pack()
 
@@ -70,7 +70,7 @@ async def test_forward_error_handling():
 
 @pytest.mark.asyncio
 async def test_forward_real_logic():
-    resolver = Resolver(records={}, upstream="8.8.8.8")
+    resolver = Resolver(records={}, upstream="1.1.1.1")
     data = b"query_data"
 
     with patch('socket.socket') as mock_sock:
@@ -93,7 +93,7 @@ async def test_forward_real_logic():
 
 @pytest.mark.asyncio
 async def test_forward_timeout():
-    resolver = Resolver(records={}, upstream="8.8.8.8")
+    resolver = Resolver(records={}, upstream="1.1.1.1")
     data = b"query_data"
 
     with patch('socket.socket'):
@@ -106,7 +106,7 @@ async def test_forward_timeout():
 
 @pytest.mark.asyncio
 async def test_forward_generic_error():
-    resolver = Resolver(records={}, upstream="8.8.8.8")
+    resolver = Resolver(records={}, upstream="1.1.1.1")
     data = b"query_data"
 
     with patch('socket.socket'):
