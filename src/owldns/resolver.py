@@ -60,13 +60,21 @@ class Resolver:
     async def forward(self, data: bytes) -> bytes:
         """
         Forwards the DNS query to an upstream DNS server via UDP.
+        Supports both IPv4 and IPv6 upstream addresses.
         """
         loop = asyncio.get_running_loop()
+
+        # Determine if upstream is IPv4 or IPv6
+        is_ipv6: bool = ":" in (self.upstream or "")
+        family = socket.AF_INET6 if is_ipv6 else socket.AF_INET
+
         # UDP forwarding session
-        with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
+        with socket.socket(family, socket.SOCK_DGRAM) as sock:
             sock.setblocking(False)
             try:
                 # Upstream DNS usually listens on port 53
+                # For IPv6, the address tuple would be (host, port, flowinfo, scopeid)
+                # socket.connect handles the correct tuple size for the family
                 await loop.sock_connect(sock, (self.upstream, 53))
                 await loop.sock_sendall(sock, data)
                 # Simple timeout for forwarding to avoid hanging
