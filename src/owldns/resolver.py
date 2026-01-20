@@ -60,7 +60,7 @@ class Resolver:
         """
         Forwards the DNS query to an upstream DNS server via UDP.
         """
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         # UDP forwarding session
         with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as sock:
             sock.setblocking(False)

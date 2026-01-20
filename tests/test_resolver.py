@@ -75,7 +75,7 @@ async def test_forward_real_logic():
 
     with patch('socket.socket') as mock_sock:
         mock_sock_inst = mock_sock.return_value.__enter__.return_value
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
 
         with patch.object(loop, 'sock_connect', new_callable=AsyncMock) as mock_connect, \
                 patch.object(loop, 'sock_sendall', new_callable=AsyncMock) as mock_send, \
@@ -97,7 +97,7 @@ async def test_forward_timeout():
     data = b"query_data"
 
     with patch('socket.socket'):
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         with patch.object(loop, 'sock_connect', new_callable=AsyncMock),              patch.object(loop, 'sock_sendall', new_callable=AsyncMock),              patch.object(asyncio, 'wait_for', side_effect=asyncio.TimeoutError):
 
             with pytest.raises(RuntimeError, match="Upstream DNS timeout"):
@@ -110,7 +110,7 @@ async def test_forward_generic_error():
     data = b"query_data"
 
     with patch('socket.socket'):
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         with patch.object(loop, 'sock_connect', side_effect=Exception("Socket error")):
             with pytest.raises(RuntimeError, match="Failed to forward to upstream"):
                 await resolver.forward(data)

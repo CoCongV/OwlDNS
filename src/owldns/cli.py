@@ -43,7 +43,7 @@ def start_server(host, port, upstream, hosts_file):
                           records=records, upstream=upstream)
 
     try:
-        asyncio.run(server.start())
+        asyncio.run(server.start(), loop_factory=uvloop.new_event_loop)
     except KeyboardInterrupt:
         logger.info("OwlDNS stopped.")
     except Exception as e:
@@ -102,7 +102,6 @@ def run_reloader(ctx_args):
 @click.pass_context
 def cli(ctx, log_level):
     """OwlDNS - A lightweight async DNS server."""
-    uvloop.install()
     ctx.ensure_object(dict)
     ctx.obj['log_level'] = log_level
 
