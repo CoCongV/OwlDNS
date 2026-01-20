@@ -1,6 +1,7 @@
 from __future__ import annotations
 import logging
 import sys
+import tomllib
 from owldns.types import DNSDict
 
 # Global logger for the owldns package
@@ -26,6 +27,16 @@ def setup_logger(level: str | int = "INFO") -> logging.Logger:
         logger.addHandler(handler)
 
     return logger
+
+
+def load_config(file_path: str) -> dict:
+    """Loads and parses a TOML configuration file."""
+    try:
+        with open(file_path, "rb") as f:
+            return tomllib.load(f)
+    except Exception as e:
+        logger.error("Error loading config file %s: %s", file_path, e)
+        return {}
 
 
 def load_hosts(file_path: str) -> DNSDict:

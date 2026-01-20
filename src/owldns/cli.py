@@ -11,7 +11,7 @@ from watchdog.observers import Observer
 from watchdog.events import FileSystemEventHandler
 
 from owldns.server import OwlDNSServer
-from owldns.utils import load_hosts
+from owldns.utils import load_hosts, load_config
 from owldns import setup_logger, logger
 
 
@@ -101,14 +101,25 @@ def run_reloader(ctx_args: list[str]) -> None:
 
 
 @click.group(invoke_without_command=True)
-@click.option("--log-level", default="INFO",
+@click.option("--config", type=click.Path(exists=True), help="Path to TOML config file")
+@click.option("--log-level",
               type=click.Choice(["DEBUG", "INFO", "WARNING",
                                 "ERROR", "CRITICAL"], case_sensitive=False),
               help="Set the logging level (default: INFO)")
 @click.pass_context
-def cli(ctx, log_level):
+def cli(ctx, config, log_level):
     """OwlDNS - A lightweight async DNS server."""
     ctx.ensure_object(dict)
+
+    config_data = {}
+    if config:
+        config_data = load_config(config)
+        ctx.default_map = config_data
+
+    # Priority: CLI argument > TOML config > Default "INFO"
+    if log_level is None:
+        log_level = config_data.get("log_level", "INFO")
+
     ctx.obj['log_level'] = log_level
 
 
@@ -134,13 +145,15 @@ def test() -> None:
 @cli.command()
 @click.option("--host", default="127.0.0.1", help="Host to bind (default: 127.0.0.1)")
 @click.option("--port", type=int, default=5353, help="Port to bind (default: 5353)")
-@click.option("--upstream", default="1.1.1.1", help="Upstream DNS server (default: 1.1.1.1)")
-@click.option("--hosts-file", default="/etc/hosts", type=click.Path(exists=True),
-              help="Path to a hosts-style file for static mappings (default: /etc/hosts)")
-@click.option("--debug", is_flag=True, help="Enable debug mode (auto-reload + DEBUG log level)")
 @click.pass_context
-def run(ctx: click.Context, host: str, port: int, upstream: str, hosts_file: str, debug: bool) -> None:
+def run(ctx: click.Context, host: str, port: int) -> None:
     """Run the DNS server."""
+    # Extract settings only from config (TOML) via default_map
+    config_run = ctx.default_map.get("run", {}) if ctx.default_map else {}
+    upstream = config_run.get("upstream", "1.1.1.1")
+    hosts_file = config_run.get("hosts_file", "/etc/hosts")
+    debug = config_run.get("debug", False)
+
     log_level = ctx.obj['log_level']
     reload = False
 
@@ -166,7 +179,7 @@ def main() -> None:
             sys.argv.insert(1, "run")
 
     # Click uses its own sys.argv handling when cli() is called
-    cli()
+    cli()  # pylint: disable=no-value-for-parameter
 
 
 if __name__ == "__main__":
