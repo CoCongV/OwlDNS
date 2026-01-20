@@ -2,6 +2,7 @@ from __future__ import annotations
 import asyncio
 from dnslib import DNSRecord, QTYPE, RR, A, AAAA
 import socket
+from owldns.types import DNSDict
 from owldns.utils import logger
 
 
@@ -10,8 +11,8 @@ class Resolver:
     DNS Resolver that handles local record lookup and upstream forwarding.
     """
 
-    def __init__(self, records: dict[str, list[str]] | None = None, upstream: str | None = "1.1.1.1"):
-        self.records: dict[str, list[str]] = records or {}
+    def __init__(self, records: DNSDict | None = None, upstream: str | None = "1.1.1.1"):
+        self.records: DNSDict = records or {}
         self.upstream: str | None = upstream
 
     async def resolve(self, data: bytes) -> bytes:

@@ -1,6 +1,7 @@
 from __future__ import annotations
 import logging
 import sys
+from owldns.types import DNSDict
 
 # Global logger for the owldns package
 logger = logging.getLogger("owldns")
@@ -27,12 +28,12 @@ def setup_logger(level: str | int = "INFO") -> logging.Logger:
     return logger
 
 
-def load_hosts(file_path: str) -> dict[str, list[str]]:
+def load_hosts(file_path: str) -> DNSDict:
     """
     Parses a hosts-style file and returns a dictionary of records.
     Supports multiple IPs (IPv4 and IPv6) for the same domain.
     """
-    records: dict[str, list[str]] = {}
+    records: DNSDict = {}
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             for line in f:
