@@ -4,7 +4,8 @@ log_level = "DEBUG"
 
 [run]
 host = "127.0.0.1"
-port = 5354
+port = 5353
 upstream = "1.1.1.1"
 debug = true
 hosts_file = "/etc/hosts"
+log_level = "DEBUG"

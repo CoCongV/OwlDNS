@@ -13,6 +13,7 @@ from watchdog.events import FileSystemEventHandler
 from owldns.server import OwlDNSServer
 from owldns.utils import load_hosts, load_config
 from owldns import setup_logger, logger
+from owldns.config import config as owl_config, update_config
 
 
 def run_tests() -> None:
@@ -30,7 +31,7 @@ def run_tests() -> None:
         result = subprocess.run(cmd, check=False)
         sys.exit(result.returncode)
     except Exception as e:
-        logger.error(f"Error running tests: {e}")
+        logger.error("Error running tests: %s", e)
         sys.exit(1)
 
 
@@ -66,7 +67,6 @@ def run_reloader(ctx_args: list[str]) -> None:
             if self.process:
                 self.process.terminate()
                 self.process.wait()
-                logger.info("Change detected, restarting OwlDNS...")
 
             # Pass environment variable to child to prevent reloader recursion
             env = os.environ.copy()
@@ -76,6 +76,13 @@ def run_reloader(ctx_args: list[str]) -> None:
         def on_any_event(self, event):
             if event.is_directory or not event.src_path.endswith('.py'):
                 return
+
+            # Filter out noise like __pycache__, .git, .venv
+            if any(x in event.src_path for x in ('.git', '__pycache__', '.venv', '.pytest_cache')):
+                return
+
+            logger.info(
+                "Change detected in %s, restarting OwlDNS...", event.src_path)
             self.restart()
 
     # Construct the command to restart (keeping all arguments)
@@ -107,18 +114,22 @@ def run_reloader(ctx_args: list[str]) -> None:
                                 "ERROR", "CRITICAL"], case_sensitive=False),
               help="Set the logging level (default: INFO)")
 @click.pass_context
-def cli(ctx, config, log_level):
+def cli(ctx, config: str | None, log_level: str | None):
     """OwlDNS - A lightweight async DNS server."""
     ctx.ensure_object(dict)
 
+    # Rename local config param to config_file to avoid global shadowing
+    config_file = config
     config_data = {}
-    if config:
-        config_data = load_config(config)
+    if config_file:
+        config_data = load_config(config_file)
         ctx.default_map = config_data
+        update_config(config_data)
 
     # Priority: CLI argument > TOML config > Default "INFO"
+    # Priority: CLI argument > TOML config > Default "INFO"
     if log_level is None:
-        log_level = config_data.get("log_level", "INFO")
+        log_level = owl_config.get("log_level", "INFO")
 
     ctx.obj['log_level'] = log_level
 
@@ -148,8 +159,8 @@ def test() -> None:
 @click.pass_context
 def run(ctx: click.Context, host: str, port: int) -> None:
     """Run the DNS server."""
-    # Extract settings only from config (TOML) via default_map
-    config_run = ctx.default_map.get("run", {}) if ctx.default_map else {}
+    # Use global config with local overrides from Click
+    config_run = owl_config.get("run", {})
     upstream = config_run.get("upstream", "1.1.1.1")
     hosts_file = config_run.get("hosts_file", "/etc/hosts")
     debug = config_run.get("debug", False)
@@ -171,12 +182,19 @@ def run(ctx: click.Context, host: str, port: int) -> None:
 
 def main() -> None:
     """Entry point wrapper to handle default command."""
-    # To maintain previous "default to run" behavior, we inject 'run' if no subcommand.
+    # Smarter default command injection:
+    # We want to support 'owldns' -> 'owldns run'
+    # And 'owldns --config f.toml' -> 'owldns --config f.toml run'
     if len(sys.argv) == 1:
         sys.argv.append("run")
-    elif len(sys.argv) > 1 and sys.argv[1] not in ["run", "test", "--help", "-h"]:
-        if not sys.argv[1].startswith("-"):
-            sys.argv.insert(1, "run")
+    else:
+        # Check if dynamic subcommands are present
+        subcommands = ["run", "test"]
+        has_subcommand = any(arg in subcommands for arg in sys.argv)
+        if not has_subcommand and not any(arg in ["--help", "-h"] for arg in sys.argv):
+            # If no subcommand found and no help flag, append 'run' at the end
+            # This ensures global options like --config are kept before the command
+            sys.argv.append("run")
 
     # Click uses its own sys.argv handling when cli() is called
     cli()  # pylint: disable=no-value-for-parameter
