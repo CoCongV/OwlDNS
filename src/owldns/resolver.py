@@ -16,23 +16,19 @@ class Resolver:
         self.upstreams: list[UpstreamServer] = upstreams if upstreams is not None else [
             {"address": "1.1.1.1", "group": None, "proxy": None}]
 
-    async def resolve(self, data: bytes) -> bytes:
+    def resolve_local(self, request: DNSRecord) -> bytes | None:
         """
-        Parses the DNS query and attempts to resolve it locally or via upstream.
+        Attempts to resolve the query using local records.
+        Returns packed DNS response if hit, otherwise None.
         """
-        request: DNSRecord = DNSRecord.parse(data)
-        reply: DNSRecord = request.reply()
         qname: str = str(request.q.qname).rstrip('.')
         qtype: int = request.q.qtype
 
-        # TODO: Implement GeoDNS & Split-Horizon Routing based on client IP
-
-        # Handle local A and AAAA record lookups
+        # Match domain pattern
         matching_domain: str | None = None
         if qname in self.records:
             matching_domain = qname
         else:
-            # Check for wildcard matches (e.g., *.example.com)
             for pattern in self.records:
                 if pattern.startswith("*."):
                     suffix = pattern[2:]
@@ -40,24 +36,44 @@ class Resolver:
                         matching_domain = pattern
                         break
 
-        if matching_domain:
-            ips = self.records[matching_domain]
-            logger.debug("Local hit: %s [%s] -> %s",
-                         qname, QTYPE.get(qtype), ips)
-            if qtype == QTYPE.A:
-                for ip in ips:
-                    if ":" not in ip:  # IPv4
-                        reply.add_answer(RR(qname, QTYPE.A, rdata=A(ip)))
-                if reply.rr:
-                    return reply.pack()
-            elif qtype == QTYPE.AAAA:
-                for ip in ips:
-                    if ":" in ip:  # IPv6
-                        reply.add_answer(RR(qname, QTYPE.AAAA, rdata=AAAA(ip)))
-                if reply.rr:
-                    return reply.pack()
+        if not matching_domain:
+            return None
+
+        # Build response
+        reply = request.reply()
+        ips = self.records[matching_domain]
+        logger.debug("Local hit: %s [%s] -> %s", qname, QTYPE.get(qtype), ips)
+
+        if qtype == QTYPE.A:
+            for ip in ips:
+                if ":" not in ip:
+                    reply.add_answer(RR(qname, QTYPE.A, rdata=A(ip)))
+        elif qtype == QTYPE.AAAA:
+            for ip in ips:
+                if ":" in ip:
+                    reply.add_answer(RR(qname, QTYPE.AAAA, rdata=AAAA(ip)))
+
+        return reply.pack() if reply.rr else None
+
+    async def resolve(self, data: bytes) -> bytes:
+        """
+        Parses the DNS query and attempts to resolve it locally or via upstream.
+        """
+        request: DNSRecord = DNSRecord.parse(data)
+        qname: str = str(request.q.qname).rstrip('.')
+        qtype: int = request.q.qtype
+
+        # TODO: Implement GeoDNS & Split-Horizon Routing based on client IP
+
+        # 1. Attempt local resolution
+        local_response = self.resolve_local(request)
+        if local_response:
+            return local_response
 
         logger.debug("Local miss: %s [%s]", qname, QTYPE.get(qtype))
+
+        # 2. If not found locally, forward to configured upstreams
+        reply: DNSRecord = request.reply()
 
         # If not found locally, forward to configured upstreams
         for upstream in self.upstreams:
