@@ -10,6 +10,7 @@ async def send_query(host: str, port: int, data: bytes) -> None:
     """Sends a single DNS query over UDP."""
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.setblocking(False)
+    sock.connect((host, port))
     loop = asyncio.get_running_loop()
     try:
         await loop.sock_sendall(sock, data)
@@ -21,7 +22,7 @@ async def send_query(host: str, port: int, data: bytes) -> None:
 
 async def benchmark(count: int = 10000, concurrency: int = 100) -> None:
     host, port = "127.0.0.1", 5353
-    q = DNSRecord.question("example.com")
+    q = DNSRecord.question("google.com")
     data = q.pack()
 
     print(
