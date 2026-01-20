@@ -1,3 +1,4 @@
+from __future__ import annotations
 import asyncio
 from dnslib import DNSRecord, QTYPE, RR, A, AAAA
 import socket
@@ -17,15 +18,15 @@ class Resolver:
         """
         Parses the DNS query and attempts to resolve it locally or via upstream.
         """
-        request = DNSRecord.parse(data)
-        reply = request.reply()
-        qname = str(request.q.qname).rstrip('.')
-        qtype = request.q.qtype
+        request: DNSRecord = DNSRecord.parse(data)
+        reply: DNSRecord = request.reply()
+        qname: str = str(request.q.qname).rstrip('.')
+        qtype: int = request.q.qtype
 
         # TODO: Implement GeoDNS & Split-Horizon Routing based on client IP
 
         # Handle local A and AAAA record lookups
-        matching_domain = None
+        matching_domain: str | None = None
         if qname in self.records:
             matching_domain = qname
         else:

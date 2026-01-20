@@ -1,3 +1,4 @@
+from __future__ import annotations
 import logging
 import sys
 
@@ -5,7 +6,7 @@ import sys
 logger = logging.getLogger("owldns")
 
 
-def setup_logger(level="INFO"):
+def setup_logger(level: str | int = "INFO") -> logging.Logger:
     """
     Configures the project-wide logger.
     """

@@ -1,3 +1,4 @@
+from __future__ import annotations
 import asyncio
 import shutil
 import subprocess
@@ -14,7 +15,7 @@ from owldns.utils import load_hosts
 from owldns import setup_logger, logger
 
 
-def run_tests():
+def run_tests() -> None:
     """Programmatically runs pytest with coverage settings via subprocess."""
     logger.info("Running OwlDNS coverage tests (including HTML report)...")
     try:
@@ -50,7 +51,7 @@ def start_server(host: str, port: int, upstream: str, hosts_file: str) -> None:
         logger.error("Error: %s", e)
 
 
-def run_reloader(ctx_args):
+def run_reloader(ctx_args: list[str]) -> None:
     """Starts a watchdog observer to restart the process on file changes."""
     class ReloadHandler(FileSystemEventHandler):
         """Restarts the subprocess when a .py file is modified."""
@@ -107,7 +108,7 @@ def cli(ctx, log_level):
 
 
 @cli.command()
-def test():
+def test() -> None:
     """Run coverage tests (generates HTML report)."""
     logger.info("Running OwlDNS coverage tests (including HTML report)...")
     try:
@@ -150,7 +151,7 @@ def run(ctx: click.Context, host: str, port: int, upstream: str, hosts_file: str
         start_server(host, port, upstream, hosts_file)
 
 
-def main():
+def main() -> None:
     """Entry point wrapper to handle default command."""
     # To maintain previous "default to run" behavior, we inject 'run' if no subcommand.
     if len(sys.argv) == 1:
