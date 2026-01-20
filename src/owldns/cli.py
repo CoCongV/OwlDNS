@@ -71,15 +71,15 @@ def run_reloader():
                 return
             self.restart()
 
-    # Construct the command to restart (stripping --reload)
+    # Construct the command to restart (stripping --debug)
     # We use "owldns" if available in PATH, otherwise fallback to python -m
-    cmd = ["owldns"] + [arg for arg in sys.argv[1:] if arg != "--reload"]
+    cmd = ["owldns"] + [arg for arg in sys.argv[1:] if arg != "--debug"]
 
     # Check if 'owldns' is in PATH, if not, use python -m
     import shutil
     if not shutil.which("owldns"):
         cmd = [sys.executable, "-m", "owldns.cli"] + \
-            [arg for arg in sys.argv[1:] if arg != "--reload"]
+            [arg for arg in sys.argv[1:] if arg != "--debug"]
 
     handler = ReloadHandler(cmd)
     observer = Observer()
@@ -126,8 +126,8 @@ def main():
     run_parser.add_argument(
         "--hosts-file", default="/etc/hosts",
         help="Path to a hosts-style file for static mappings (default: /etc/hosts)")
-    run_parser.add_argument("--reload", action="store_true",
-                            help="Auto-reload on code changes (development only)")
+    run_parser.add_argument("--debug", action="store_true",
+                            help="Enable debug mode (auto-reload + DEBUG log level)")
 
     # 'test' command
     subparsers.add_parser(
@@ -140,13 +140,20 @@ def main():
 
     args = parser.parse_args()
 
+    # Handle debug mode: force DEBUG level and enable reload
+    if hasattr(args, 'debug') and args.debug:
+        args.log_level = "DEBUG"
+        args.reload = True
+    else:
+        args.reload = False
+
     # Initialize logger
     setup_logger(level=args.log_level)
 
     if args.command == "test":
         run_tests()
     elif args.command == "run" or args.command is None:
-        if hasattr(args, 'reload') and args.reload:
+        if args.reload:
             run_reloader()
         else:
             start_server(args)
