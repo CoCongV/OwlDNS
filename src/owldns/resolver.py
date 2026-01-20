@@ -62,7 +62,12 @@ class Resolver:
         if self.upstream:
             try:
                 response = await self.forward(data)
-                logger.debug("Upstream hit: %s [%s]", qname, QTYPE.get(qtype))
+                # Parse response to extract IPs for logging
+                resp_record = DNSRecord.parse(response)
+                ips = [str(r.rdata)
+                       for r in resp_record.rr if r.rtype in (QTYPE.A, QTYPE.AAAA)]
+                logger.debug(
+                    "Upstream hit: %s [%s] -> %s", qname, QTYPE.get(qtype), ips)
                 return response
             except Exception as e:
                 logger.error("Upstream forwarding error for %s: %s", qname, e)
