@@ -35,14 +35,14 @@ def run_tests() -> None:
         sys.exit(1)
 
 
-def start_server(host: str, port: int, upstream: str, hosts_file: str) -> None:
+def start_server(host: str, port: int, upstreams: list[str], hosts_file: str) -> None:
     """Initializes and runs the DNS server."""
     # Load records from the specified hosts file
     records = load_hosts(hosts_file)
 
     # Initialize and run the server
     server = OwlDNSServer(host=host, port=port,
-                          records=records, upstream=upstream)
+                          records=records, upstreams=upstreams)
 
     try:
         asyncio.run(server.start(), loop_factory=uvloop.new_event_loop)
@@ -123,10 +123,8 @@ def cli(ctx, config: str | None, log_level: str | None):
     config_data = {}
     if config_file:
         config_data = load_config(config_file)
-        ctx.default_map = config_data
         update_config(config_data)
 
-    # Priority: CLI argument > TOML config > Default "INFO"
     # Priority: CLI argument > TOML config > Default "INFO"
     if log_level is None:
         log_level = owl_config.get("log_level", "INFO")
@@ -154,14 +152,21 @@ def test() -> None:
 
 
 @cli.command()
-@click.option("--host", default="127.0.0.1", help="Host to bind (default: 127.0.0.1)")
-@click.option("--port", type=int, default=5353, help="Port to bind (default: 5353)")
+@click.option("--host", help="Host to bind (default: 127.0.0.1)")
+@click.option("--port", type=int, help="Port to bind (default: 5353)")
 @click.pass_context
-def run(ctx: click.Context, host: str, port: int) -> None:
+def run(ctx: click.Context, host: str | None, port: int | None) -> None:
     """Run the DNS server."""
-    # Use global config with local overrides from Click
+    # Use global config (owl_config) as the source of truth
     config_run = owl_config.get("run", {})
-    upstream = config_run.get("upstream", "1.1.1.1")
+
+    # Priority: CLI argument > TOML config > Hardcoded default
+    host = host or config_run.get("host", "127.0.0.1")
+    port = port or config_run.get("port", 5353)
+
+    upstreams = config_run.get(
+        "upstream", [{"address": "1.1.1.1", "group": None, "proxy": None}])
+
     hosts_file = config_run.get("hosts_file", "/etc/hosts")
     debug = config_run.get("debug", False)
 
@@ -177,7 +182,7 @@ def run(ctx: click.Context, host: str, port: int) -> None:
     if reload and os.environ.get("OWLDNS_RELOAD_CHILD") != "1":
         run_reloader(sys.argv[1:])
     else:
-        start_server(host, port, upstream, hosts_file)
+        start_server(host, port, upstreams, hosts_file)
 
 
 def main() -> None:

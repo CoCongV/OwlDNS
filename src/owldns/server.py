@@ -1,6 +1,6 @@
 import asyncio
 from owldns.resolver import Resolver
-from owldns.types import DNSDict
+from owldns.types import DNSDict, UpstreamServer
 from owldns.utils import logger
 
 
@@ -37,10 +37,10 @@ class OwlDNSServer:
     """
 
     def __init__(self, host: str = "0.0.0.0", port: int = 53,
-                 records: DNSDict | None = None, upstream: str = "1.1.1.1"):
+                 records: DNSDict | None = None, upstreams: list[UpstreamServer] | None = None):
         self.host: str = host
         self.port: int = port
-        self.resolver: Resolver = Resolver(records, upstream)
+        self.resolver: Resolver = Resolver(records, upstreams)
         self.transport: asyncio.DatagramTransport | None = None
         self.protocol: OwlDNSProtocol | None = None
 
