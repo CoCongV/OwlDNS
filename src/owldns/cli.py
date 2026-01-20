@@ -33,7 +33,7 @@ def run_tests():
         sys.exit(1)
 
 
-def start_server(host, port, upstream, hosts_file):
+def start_server(host: str, port: int, upstream: str, hosts_file: str) -> None:
     """Initializes and runs the DNS server."""
     # Load records from the specified hosts file
     records = load_hosts(hosts_file)
@@ -133,7 +133,7 @@ def test():
               help="Path to a hosts-style file for static mappings (default: /etc/hosts)")
 @click.option("--debug", is_flag=True, help="Enable debug mode (auto-reload + DEBUG log level)")
 @click.pass_context
-def run(ctx, host, port, upstream, hosts_file, debug):
+def run(ctx: click.Context, host: str, port: int, upstream: str, hosts_file: str, debug: bool) -> None:
     """Run the DNS server."""
     log_level = ctx.obj['log_level']
     reload = False

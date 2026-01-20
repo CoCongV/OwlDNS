@@ -8,19 +8,19 @@ class OwlDNSProtocol(asyncio.DatagramProtocol):
     Asyncio DatagramProtocol for handling UDP DNS queries.
     """
 
-    def __init__(self, resolver):
-        self.resolver = resolver
-        self.transport = None
+    def __init__(self, resolver: Resolver):
+        self.resolver: Resolver = resolver
+        self.transport: asyncio.DatagramTransport | None = None
 
-    def connection_made(self, transport):
+    def connection_made(self, transport: asyncio.DatagramTransport):
         """Called when the transport is established."""
         self.transport = transport
 
-    def datagram_received(self, data, addr):
+    def datagram_received(self, data: bytes, addr: tuple[str, int]):
         """Asynchronously handles incoming UDP datagrams."""
         asyncio.create_task(self.handle_query(data, addr))
 
-    async def handle_query(self, data, addr):
+    async def handle_query(self, data: bytes, addr: tuple[str, int]) -> None:
         """Processes a DNS query and sends the response back to the client."""
         try:
             response = await self.resolver.resolve(data)
@@ -35,12 +35,13 @@ class OwlDNSServer:
     The main DNS server class that manages the resolver and the network endpoint.
     """
 
-    def __init__(self, host="0.0.0.0", port=53, records=None, upstream="1.1.1.1"):
-        self.host = host
-        self.port = port
-        self.resolver = Resolver(records, upstream)
-        self.transport = None
-        self.protocol = None
+    def __init__(self, host: str = "0.0.0.0", port: int = 53,
+                 records: dict[str, str] | None = None, upstream: str = "1.1.1.1"):
+        self.host: str = host
+        self.port: int = port
+        self.resolver: Resolver = Resolver(records, upstream)
+        self.transport: asyncio.DatagramTransport | None = None
+        self.protocol: OwlDNSProtocol | None = None
 
     async def start(self):
         """Starts the async UDP DNS server."""

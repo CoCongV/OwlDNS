@@ -26,7 +26,7 @@ def setup_logger(level="INFO"):
     return logger
 
 
-def load_hosts(file_path):
+def load_hosts(file_path: str) -> dict[str, str]:
     """
     Parses a hosts-style file and returns a dictionary of records.
     Standard format: IP domain1 [domain2 ...]

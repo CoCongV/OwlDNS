@@ -9,11 +9,11 @@ class Resolver:
     DNS Resolver that handles local record lookup and upstream forwarding.
     """
 
-    def __init__(self, records=None, upstream="1.1.1.1"):
-        self.records = records or {}
-        self.upstream = upstream
+    def __init__(self, records: dict[str, str] | None = None, upstream: str | None = "1.1.1.1"):
+        self.records: dict[str, str] = records or {}
+        self.upstream: str | None = upstream
 
-    async def resolve(self, data):
+    async def resolve(self, data: bytes) -> bytes:
         """
         Parses the DNS query and attempts to resolve it locally or via upstream.
         """
@@ -56,7 +56,7 @@ class Resolver:
 
         return reply.pack()
 
-    async def forward(self, data):
+    async def forward(self, data: bytes) -> bytes:
         """
         Forwards the DNS query to an upstream DNS server via UDP.
         """
